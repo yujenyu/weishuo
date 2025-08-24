@@ -13,6 +13,7 @@ import Button from '@mui/material/Button';
 import Tooltip from '@mui/material/Tooltip';
 import MenuItem from '@mui/material/MenuItem';
 // import AdbIcon from '@mui/icons-material/Adb';
+import { FaBars } from 'react-icons/fa6';
 
 // const pages = ['關於我們', '最新資訊', '資源分享', '聯絡我們'];
 const navLinks = [
@@ -50,6 +51,7 @@ function ResponsiveAppBar() {
     <AppBar position="sticky" sx={{ backgroundColor: 'black', color: 'white' }}>
       <Container maxWidth="xl">
         <Toolbar disableGutters>
+          {/* Desktop */}
           {/* <AdbIcon sx={{ display: { xs: 'none', md: 'flex' }, mr: 1 }} /> */}
           <Typography
             variant="h6"
@@ -79,6 +81,7 @@ function ResponsiveAppBar() {
               color="inherit"
             >
               {/* <MenuIcon /> */}
+              <FaBars style={{ color: 'white', fontSize: '24px' }} />
             </IconButton>
             <Menu
               id="menu-appbar"
@@ -110,12 +113,13 @@ function ResponsiveAppBar() {
               ))}
             </Menu>
           </Box>
+          {/* Mobile */}
           {/* <AdbIcon sx={{ display: { xs: 'flex', md: 'none' }, mr: 1 }} /> */}
           <Typography
             variant="h5"
             noWrap
             component="a"
-            href="#app-bar-with-responsive-menu"
+            href="/"
             sx={{
               mr: 2,
               display: { xs: 'flex', md: 'none' },
