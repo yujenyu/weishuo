@@ -1,18 +1,11 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
+
+import InitColorSchemeScript from '@mui/material/InitColorSchemeScript';
+import ThemeProviders from './ThemeProviders';
+
 import AppBar from './components/AppBar';
 import Footer from './components/Footer';
-
-const geistSans = Geist({
-  variable: '--font-geist-sans',
-  subsets: ['latin'],
-});
-
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
-});
 
 export const metadata: Metadata = {
   title: 'WEISHUO',
@@ -21,22 +14,21 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html lang="en">
+    <html lang="zh-Hant" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          minHeight: '100vh',
-        }}
+        style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}
       >
-        <AppBar />
-        <main style={{ flex: 1 }}>{children}</main>
-        <Footer />
+        {/* 避免首屏閃爍 */}
+        <InitColorSchemeScript attribute="data" defaultMode="system" />
+        <ThemeProviders>
+          <AppBar />
+          <main style={{ flex: 1 }}>{children}</main>
+          <Footer />
+        </ThemeProviders>
       </body>
     </html>
   );

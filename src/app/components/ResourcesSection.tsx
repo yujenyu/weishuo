@@ -1,6 +1,6 @@
 'use client';
 
-import * as React from 'react';
+import { useState, useEffect } from 'react';
 import {
   Grid,
   Card,
@@ -10,10 +10,14 @@ import {
   Button,
   Tabs,
   Tab,
+  Skeleton,
 } from '@mui/material';
 
 export default function ResourcesSection() {
-  const [tab, setTab] = React.useState(0);
+  const [tab, setTab] = useState(0);
+
+  // 每張卡片獨立 loaded 狀態
+  const [loadedMap, setLoadedMap] = useState<Record<string, boolean>>({});
 
   // 模擬資料
   const shares = [
@@ -72,6 +76,19 @@ export default function ResourcesSection() {
 
   const items = tab === 0 ? shares : needs;
 
+  useEffect(() => {
+    const preload = tab === 0 ? shares : needs;
+    preload.forEach((item) => {
+      const img = new Image();
+      img.src = item.img;
+    });
+  }, [tab]);
+
+  // 切換 Tab 時清空已載入紀錄，避免殘留
+  useEffect(() => {
+    setLoadedMap({});
+  }, [tab]);
+
   return (
     <>
       <Typography
@@ -97,14 +114,40 @@ export default function ResourcesSection() {
       {/* Grid 卡片內容 */}
       <Grid container spacing={4}>
         {items.map((item) => (
-          <Grid key={item.id} size={{ xs: 12, sm: 6, md: 3 }}>
+          <Grid key={`${tab}-${item.id}`} size={{ xs: 12, sm: 6, md: 3 }}>
             <Card sx={{ height: '100%', textAlign: 'center', p: 2 }}>
               <CardMedia
                 component="img"
                 image={item.img}
                 alt={item.title}
-                sx={{ borderRadius: 2 }}
+                loading="lazy"
+                decoding="async"
+                sx={{
+                  borderRadius: 2,
+                  // 雙重否定，把任何值強制轉成布林值
+                  display: !!loadedMap[`${tab}-${item.id}`] ? 'block' : 'none',
+                  width: '100%',
+                  height: 200,
+                  objectFit: 'cover',
+                }}
+                onLoad={() =>
+                  setLoadedMap((prev) => ({
+                    ...prev,
+                    [`${tab}-${item.id}`]: true,
+                  }))
+                }
+                onError={() =>
+                  setLoadedMap((prev) => ({
+                    ...prev,
+                    [`${tab}-${item.id}`]: true,
+                  }))
+                }
               />
+
+              {!loadedMap[`${tab}-${item.id}`] && (
+                <Skeleton variant="rounded" width="100%" height={200} />
+              )}
+
               <CardContent>
                 <Typography variant="h6" gutterBottom>
                   {item.title}
