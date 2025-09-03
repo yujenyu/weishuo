@@ -43,7 +43,7 @@ export default function NewsSection() {
       <Typography
         variant="h4"
         gutterBottom
-        sx={{ fontWeight: 'bold', mb: 3, color: '#000000' }}
+        sx={{ fontWeight: 'bold', mb: 3, color: 'primary' }}
       >
         最新消息
       </Typography>

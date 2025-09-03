@@ -1,5 +1,6 @@
 'use client';
-import * as React from 'react';
+import { useState, type MouseEvent } from 'react';
+import Link from 'next/link';
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
 import Toolbar from '@mui/material/Toolbar';
@@ -26,18 +27,14 @@ const navLinks = [
 const settings = ['Profile', 'Account', 'Dashboard', 'Logout'];
 
 function ResponsiveAppBar() {
-  const [anchorElNav, setAnchorElNav] = React.useState<null | HTMLElement>(
-    null,
-  );
+  const [anchorElNav, setAnchorElNav] = useState<null | HTMLElement>(null);
+  const [anchorElUser, setAnchorElUser] = useState<null | HTMLElement>(null);
 
-  const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(
-    null,
-  );
-
-  const handleOpenNavMenu = (event: React.MouseEvent<HTMLElement>) => {
+  const handleOpenNavMenu = (event: MouseEvent<HTMLElement>) => {
     setAnchorElNav(event.currentTarget);
   };
-  const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
+
+  const handleOpenUserMenu = (event: MouseEvent<HTMLElement>) => {
     setAnchorElUser(event.currentTarget);
   };
 
@@ -50,15 +47,20 @@ function ResponsiveAppBar() {
   };
 
   return (
-    <AppBar position="sticky" sx={{ backgroundColor: 'black', color: 'white' }}>
+    <AppBar
+      position="sticky"
+      color="default"
+      enableColorOnDark
+      sx={{ bgcolor: 'background.paper', color: 'text.primary' }}
+    >
       <Container maxWidth="xl">
         <Toolbar disableGutters>
-          {/* Desktop */}
+          {/* Desktop Brand*/}
           {/* <AdbIcon sx={{ display: { xs: 'none', md: 'flex' }, mr: 1 }} /> */}
           <Typography
             variant="h6"
             noWrap
-            component="a"
+            component={Link}
             href="/"
             sx={{
               mr: 2,
@@ -73,6 +75,7 @@ function ResponsiveAppBar() {
             WEISHUO
           </Typography>
 
+          {/* Mobile: Menu Button + Nav Menu */}
           <Box sx={{ flexGrow: 1, display: { xs: 'flex', md: 'none' } }}>
             <IconButton
               size="large"
@@ -83,7 +86,7 @@ function ResponsiveAppBar() {
               color="inherit"
             >
               {/* <MenuIcon /> */}
-              <FaBars style={{ color: 'white', fontSize: '24px' }} />
+              <FaBars style={{ fontSize: '24px' }} />
             </IconButton>
             <Menu
               id="menu-appbar"
@@ -104,7 +107,7 @@ function ResponsiveAppBar() {
               {navLinks.map((link) => (
                 <MenuItem
                   key={link.label}
-                  component="a"
+                  component={Link}
                   href={link.href}
                   onClick={handleCloseNavMenu}
                 >
@@ -115,12 +118,13 @@ function ResponsiveAppBar() {
               ))}
             </Menu>
           </Box>
-          {/* Mobile */}
+
+          {/* Mobile Brand */}
           {/* <AdbIcon sx={{ display: { xs: 'flex', md: 'none' }, mr: 1 }} /> */}
           <Typography
             variant="h5"
             noWrap
-            component="a"
+            component={Link}
             href="/"
             sx={{
               mr: 2,
@@ -135,18 +139,23 @@ function ResponsiveAppBar() {
           >
             WEISHUO
           </Typography>
+
+          {/* Desktop Nav */}
           <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' } }}>
             {navLinks.map((link) => (
               <Button
                 key={link.label}
+                component={Link}
                 href={link.href}
                 onClick={handleCloseNavMenu}
-                sx={{ my: 2, color: 'white', display: 'block' }}
+                sx={{ my: 2, color: 'inherit', display: 'block' }}
               >
                 {link.label}
               </Button>
             ))}
           </Box>
+
+          {/* Profile Icon Controls */}
           <Box sx={{ flexGrow: 0 }}>
             <ThemeToggleButton />
             <Tooltip title="Open settings">

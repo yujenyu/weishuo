@@ -94,7 +94,7 @@ export default function ResourcesSection() {
       <Typography
         variant="h4"
         gutterBottom
-        sx={{ fontWeight: 'bold', mt: 8, mb: 2, color: '#000000' }}
+        sx={{ fontWeight: 'bold', mt: 8, mb: 2, color: 'primary' }}
       >
         資源分享
       </Typography>

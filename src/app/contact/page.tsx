@@ -4,7 +4,7 @@ import { Container, Typography } from '@mui/material';
 
 export default function ContactPage() {
   return (
-    <Container maxWidth="md" sx={{ mt: 6, mb: 6, color: '#000000' }}>
+    <Container maxWidth="md" sx={{ mt: 6, mb: 6, color: 'text.primary' }}>
       <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold', mb: 3 }}>
         聯絡我們
       </Typography>

@@ -8,7 +8,7 @@ export default function AboutPage() {
       <Typography
         variant="h4"
         gutterBottom
-        sx={{ fontWeight: 'bold', mb: 3, color: '#000000' }}
+        sx={{ fontWeight: 'bold', mb: 3, color: 'text.primary' }}
       >
         關於我們
       </Typography>
