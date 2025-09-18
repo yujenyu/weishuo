@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 import InitColorSchemeScript from '@mui/material/InitColorSchemeScript';
-import ThemeProviders from './ThemeProviders';
+import Providers from './providers';
 
 import AppBar from './components/AppBar';
 import Footer from './components/Footer';
@@ -24,11 +24,11 @@ export default function RootLayout({
       >
         {/* 避免首屏閃爍 */}
         <InitColorSchemeScript attribute="data" defaultMode="system" />
-        <ThemeProviders>
+        <Providers>
           <AppBar />
           <main style={{ flex: 1 }}>{children}</main>
           <Footer />
-        </ThemeProviders>
+        </Providers>
       </body>
     </html>
   );

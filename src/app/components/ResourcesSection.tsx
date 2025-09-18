@@ -11,83 +11,70 @@ import {
   Tabs,
   Tab,
   Skeleton,
+  CardActions,
 } from '@mui/material';
 
+type Item = {
+  id: string;
+  title: string;
+  description?: string;
+  imageUrl?: string;
+};
+
 export default function ResourcesSection() {
+  // 0=SHARE, 1=NEED
   const [tab, setTab] = useState(0);
 
-  // 每張卡片獨立 loaded 狀態
+  // 每張卡片獨立 loaded 狀態, 控制圖片級 Skeleton
   const [loadedMap, setLoadedMap] = useState<Record<string, boolean>>({});
+  const [loading, setLoading] = useState(false); // 載入狀態, 控制清單級 Skeleton
 
-  // 模擬資料
-  const shares = [
-    {
-      id: 1,
-      title: '分享項目 A',
-      desc: '這是最新的資源分享。',
-      img: 'https://picsum.photos/seed/share1/400/300',
-    },
-    {
-      id: 2,
-      title: '分享項目 B',
-      desc: '這是最新的資源分享。',
-      img: 'https://picsum.photos/seed/share2/400/300',
-    },
-    {
-      id: 3,
-      title: '分享項目 C',
-      desc: '這是最新的資源分享。',
-      img: 'https://picsum.photos/seed/share3/400/300',
-    },
-    {
-      id: 4,
-      title: '分享項目 D',
-      desc: '這是最新的資源分享。',
-      img: 'https://picsum.photos/seed/share4/400/300',
-    },
-  ];
+  const [items, setItems] = useState<Item[]>([]); // 以 API 回來的 items 取代 mock
+  const [skip, setSkip] = useState(0); // 分頁
+  const [take] = useState(8); // 每頁筆數
+  const [total, setTotal] = useState(0); // 總筆數
+  const [error, setError] = useState<string | null>(null); // 錯誤訊息
 
-  const needs = [
-    {
-      id: 1,
-      title: '需求項目 X',
-      desc: '這是最新的需求資訊。',
-      img: 'https://picsum.photos/seed/need1/400/300',
-    },
-    {
-      id: 2,
-      title: '需求項目 Y',
-      desc: '這是最新的需求資訊。',
-      img: 'https://picsum.photos/seed/need2/400/300',
-    },
-    {
-      id: 3,
-      title: '需求項目 Z',
-      desc: '這是最新的需求資訊。',
-      img: 'https://picsum.photos/seed/need3/400/300',
-    },
-    {
-      id: 4,
-      title: '需求項目 W',
-      desc: '這是最新的需求資訊。',
-      img: 'https://picsum.photos/seed/need4/400/300',
-    },
-  ];
+  // 依 tab 決定呼叫 shares 或 needs
+  const typePath = tab === 0 ? 'shares' : 'needs';
 
-  const items = tab === 0 ? shares : needs;
+  async function load(initial = false) {
+    if (loading) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(
+        `/api/${typePath}?take=${take}&skip=${initial ? 0 : skip}`,
+        { cache: 'no-store' },
+      );
+      const data = await res.json();
+      if (initial) {
+        setItems(data.items);
+        setSkip(data.take);
+      } else {
+        setItems((prev) => [...prev, ...data.items]);
+        setSkip((prev) => prev + data.take);
+      }
+      setTotal(data.total);
+    } catch (e: any) {
+      setError(e?.message ?? '載入失敗');
+    } finally {
+      setLoading(false); // 完成後結束清單級 Skeleton
+    }
+  }
 
+  // 切換 Tab 時清空並重新抓
   useEffect(() => {
-    const preload = tab === 0 ? shares : needs;
-    preload.forEach((item) => {
-      const img = new Image();
-      img.src = item.img;
-    });
-  }, [tab]);
-
-  // 切換 Tab 時清空已載入紀錄，避免殘留
-  useEffect(() => {
+    setItems([]);
+    setSkip(0);
+    setTotal(0);
     setLoadedMap({});
+    setLoading(true); // 先讓清單級 Skeleton 出現
+    load(true);
   }, [tab]);
+
+  const hasMore = skip < total; // 控制查看更多
+  const showLoadMore = items.length > 0 || total > 0; // 只在知道總數或已有資料時顯示按鈕
 
   return (
     <>
@@ -111,75 +98,146 @@ export default function ResourcesSection() {
         <Tab label="最新需求" />
       </Tabs>
 
-      {/* Grid 卡片內容 */}
-      <Grid container spacing={4}>
-        {items.map((item) => (
-          <Grid key={`${tab}-${item.id}`} size={{ xs: 12, sm: 6, md: 3 }}>
-            <Card sx={{ height: '100%', textAlign: 'center', p: 2 }}>
-              <CardMedia
-                component="img"
-                image={item.img}
-                alt={item.title}
-                loading="lazy"
-                decoding="async"
-                sx={{
-                  borderRadius: 2,
-                  // 雙重否定，把任何值強制轉成布林值
-                  display: !!loadedMap[`${tab}-${item.id}`] ? 'block' : 'none',
-                  width: '100%',
-                  height: 200,
-                  objectFit: 'cover',
-                }}
-                onLoad={() =>
-                  setLoadedMap((prev) => ({
-                    ...prev,
-                    [`${tab}-${item.id}`]: true,
-                  }))
-                }
-                onError={() =>
-                  setLoadedMap((prev) => ({
-                    ...prev,
-                    [`${tab}-${item.id}`]: true,
-                  }))
-                }
-              />
+      {/* 簡單錯誤顯示 */}
+      {error && (
+        <Typography color="error" sx={{ mb: 2 }}>
+          {error}
+        </Typography>
+      )}
 
-              {!loadedMap[`${tab}-${item.id}`] && (
+      {loading && items.length === 0 ? (
+        // 清單級 Skeleton
+        <Grid container spacing={4}>
+          {Array.from({ length: take }).map((_, i) => (
+            <Grid key={`skeleton-${i}`} size={{ xs: 12, sm: 6, md: 3 }}>
+              <Card sx={{ height: '100%', textAlign: 'center', p: 2 }}>
                 <Skeleton variant="rounded" width="100%" height={200} />
-              )}
-
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  {item.title}
-                </Typography>
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{ mb: 2 }}
-                >
-                  {item.desc}
-                </Typography>
-                <Button variant="contained" size="small">
-                  {tab === 0 ? '查看資源' : '聯繫需求'}
-                </Button>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-
-        {/* 查看更多按鈕 */}
-        <Grid
-          size={12}
-          sx={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            mt: 4,
-          }}
-        >
-          <Button variant="contained">查看更多</Button>
+                <CardContent>
+                  <Skeleton
+                    variant="text"
+                    width="70%"
+                    height={28}
+                    sx={{ mx: 'auto', mb: 1 }}
+                  />
+                  <Skeleton variant="text" width="90%" />
+                  <Skeleton variant="text" width="80%" sx={{ mb: 2 }} />
+                  <Skeleton
+                    variant="rounded"
+                    width={100}
+                    height={36}
+                    sx={{ mx: 'auto' }}
+                  />
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
         </Grid>
-      </Grid>
+      ) : (
+        // 一般卡片 + 圖片級 Skeleton
+        <Grid container spacing={4}>
+          {items.map((item) => {
+            const key = `${tab}-${item.id}`;
+            const loaded = !!loadedMap[key];
+            return (
+              <Grid key={key} size={{ xs: 12, sm: 6, md: 3 }}>
+                <Card
+                  sx={{
+                    height: '100%',
+                    textAlign: 'center',
+                    p: 2,
+                    position: 'relative',
+                    display: 'flex', // 讓整張卡片成為 flex 容器
+                    flexDirection: 'column', // 垂直排列：圖片/內容/按鈕
+                  }}
+                >
+                  {/* 圖片級 Skeleton 疊層 */}
+                  {!loaded && (
+                    <Skeleton
+                      variant="rounded"
+                      width="100%"
+                      height={200}
+                      sx={{
+                        position: 'absolute',
+                        top: 16,
+                        left: 16,
+                        right: 16,
+                      }}
+                    />
+                  )}
+
+                  <CardMedia
+                    component="img"
+                    image={item.imageUrl || '/No_Image_Placeholder.png'}
+                    alt={item.title}
+                    sx={{
+                      borderRadius: 2,
+                      width: '100%',
+                      height: 200,
+                      objectFit: 'cover',
+                      opacity: loaded ? 1 : 0, // 用透明度，不用 display:none
+                      transition: 'opacity .25s ease',
+                    }}
+                    onLoad={() =>
+                      setLoadedMap((prev) => ({ ...prev, [key]: true }))
+                    }
+                    onError={() =>
+                      setLoadedMap((prev) => ({ ...prev, [key]: true }))
+                    }
+                  />
+
+                  <CardContent sx={{ flexGrow: 1 }}>
+                    <Typography variant="h6" gutterBottom>
+                      {item.title}
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ mb: 2 }}
+                    >
+                      {item.description ?? '—'}
+                    </Typography>
+                  </CardContent>
+                  <CardActions
+                    sx={{ mt: 'auto', p: 0, pt: 1, justifyContent: 'center' }}
+                  >
+                    <Button
+                      variant="contained"
+                      size="small"
+                      sx={{
+                        minWidth: 'auto', // 讓寬度跟內容走
+                        textTransform: 'none',
+                      }}
+                    >
+                      {tab === 0 ? '查看資源' : '聯繫需求'}
+                    </Button>
+                  </CardActions>
+                </Card>
+              </Grid>
+            );
+          })}
+
+          {/* 查看更多按鈕（避免初次就顯示「沒有更多了」） */}
+          {showLoadMore && (
+            <Grid
+              size={12}
+              sx={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                mt: 4,
+              }}
+            >
+              <Button
+                variant="contained"
+                disabled={!hasMore || loading}
+                onClick={() => load()}
+              >
+                {loading ? '載入中...' : hasMore ? '查看更多' : '沒有更多了'}
+              </Button>
+            </Grid>
+          )}
+        </Grid>
+      )}
     </>
   );
 }

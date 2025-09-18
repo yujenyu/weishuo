@@ -1,27 +1,29 @@
 'use client';
 import { useState, type MouseEvent } from 'react';
 import Link from 'next/link';
-import AppBar from '@mui/material/AppBar';
-import Box from '@mui/material/Box';
-import Toolbar from '@mui/material/Toolbar';
-import IconButton from '@mui/material/IconButton';
-import Typography from '@mui/material/Typography';
-import Menu from '@mui/material/Menu';
-// import MenuIcon from '@mui/icons-material/Menu';
-import Container from '@mui/material/Container';
-import Avatar from '@mui/material/Avatar';
-import Button from '@mui/material/Button';
-import Tooltip from '@mui/material/Tooltip';
-import MenuItem from '@mui/material/MenuItem';
-// import AdbIcon from '@mui/icons-material/Adb';
-import { FaBars } from 'react-icons/fa6';
+import {
+  AppBar,
+  Box,
+  Toolbar,
+  IconButton,
+  Typography,
+  Menu,
+  Container,
+  Avatar,
+  Button,
+  Tooltip,
+  MenuItem,
+} from '@mui/material';
+import { FaBars, FaGoogle } from 'react-icons/fa6';
 import ThemeToggleButton from './ThemeToggleButton';
+import { useSession, signIn, signOut } from 'next-auth/react';
 
 // const pages = ['關於我們', '最新資訊', '資源分享', '聯絡我們'];
 const navLinks = [
   { label: '關於我們', href: '/about' },
   { label: '最新資訊', href: '/news' },
   { label: '資源分享', href: '/resources' },
+  { label: '活動紀實', href: '/activities' },
   { label: '聯絡我們', href: '/contact' },
 ];
 const settings = ['Profile', 'Account', 'Dashboard', 'Logout'];
@@ -29,6 +31,11 @@ const settings = ['Profile', 'Account', 'Dashboard', 'Logout'];
 function ResponsiveAppBar() {
   const [anchorElNav, setAnchorElNav] = useState<null | HTMLElement>(null);
   const [anchorElUser, setAnchorElUser] = useState<null | HTMLElement>(null);
+
+  const { data: session, status } = useSession();
+  const isLoading = status === 'loading';
+  const isAuthed = status === 'authenticated';
+  const user = session?.user;
 
   const handleOpenNavMenu = (event: MouseEvent<HTMLElement>) => {
     setAnchorElNav(event.currentTarget);
@@ -158,35 +165,76 @@ function ResponsiveAppBar() {
           {/* Profile Icon Controls */}
           <Box sx={{ flexGrow: 0 }}>
             <ThemeToggleButton />
-            <Tooltip title="Open settings">
-              <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
-                <Avatar alt="Remy Sharp" src="/static/images/avatar/2.jpg" />
-              </IconButton>
-            </Tooltip>
-            <Menu
-              sx={{ mt: '45px' }}
-              id="menu-appbar"
-              anchorEl={anchorElUser}
-              anchorOrigin={{
-                vertical: 'top',
-                horizontal: 'right',
-              }}
-              keepMounted
-              transformOrigin={{
-                vertical: 'top',
-                horizontal: 'right',
-              }}
-              open={Boolean(anchorElUser)}
-              onClose={handleCloseUserMenu}
-            >
-              {settings.map((setting) => (
-                <MenuItem key={setting} onClick={handleCloseUserMenu}>
-                  <Typography sx={{ textAlign: 'center' }}>
-                    {setting}
-                  </Typography>
-                </MenuItem>
-              ))}
-            </Menu>
+            {!isAuthed ? (
+              <>
+                {/* xs: Google IconButton */}
+                <IconButton
+                  aria-label="使用 Google 登入"
+                  onClick={() => signIn('google', { callbackUrl: '/' })}
+                  sx={{ display: { xs: 'inline-flex', md: 'none' } }}
+                >
+                  <FaGoogle size={22} />
+                </IconButton>
+
+                {/* md: 含文字的登入按鈕 */}
+                <Button
+                  variant="contained"
+                  onClick={() => signIn('google', { callbackUrl: '/' })}
+                  disabled={isLoading}
+                  startIcon={<FaGoogle />}
+                  sx={{ display: { xs: 'none', md: 'inline-flex' } }}
+                >
+                  {isLoading ? '載入中…' : '登入'}
+                </Button>
+              </>
+            ) : (
+              <>
+                {/* 已登入: 顯示真實使用者頭像與選單 */}
+                <Tooltip title={user?.name ?? '帳戶'}>
+                  <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
+                    <Avatar
+                      alt={user?.name ?? 'User'}
+                      src={user?.image ?? undefined} // 改用 session.user.image
+                    />
+                  </IconButton>
+                </Tooltip>
+                <Menu
+                  sx={{ mt: '45px' }}
+                  id="menu-appbar"
+                  anchorEl={anchorElUser}
+                  anchorOrigin={{
+                    vertical: 'top',
+                    horizontal: 'right',
+                  }}
+                  keepMounted
+                  transformOrigin={{
+                    vertical: 'top',
+                    horizontal: 'right',
+                  }}
+                  open={Boolean(anchorElUser)}
+                  onClose={handleCloseUserMenu}
+                >
+                  {/* 明確列出個人資料與登出 */}
+                  <MenuItem
+                    component={Link}
+                    href="/profile"
+                    onClick={handleCloseUserMenu}
+                  >
+                    <Typography sx={{ textAlign: 'center' }}>
+                      個人資料
+                    </Typography>
+                  </MenuItem>
+                  <MenuItem
+                    onClick={() => {
+                      handleCloseUserMenu();
+                      signOut({ callbackUrl: '/' });
+                    }}
+                  >
+                    <Typography sx={{ textAlign: 'center' }}>登出</Typography>
+                  </MenuItem>
+                </Menu>
+              </>
+            )}
           </Box>
         </Toolbar>
       </Container>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box,
   Grid,
@@ -12,31 +12,59 @@ import {
   Skeleton,
 } from '@mui/material';
 
-export default function NewsSection() {
-  // 每張卡片獨立 loaded 狀態
-  const [loadedMap, setLoadedMap] = useState<Record<string, boolean>>({});
+type NewsItem = {
+  id: string;
+  title: string;
+  description?: string;
+  imageUrl?: string;
+  createdAt: string;
+};
 
-  // 模擬資料
-  const news = [
-    {
-      id: 1,
-      title: '新聞標題 A',
-      desc: '這是一段最新消息的摘要，簡單介紹文章內容。',
-      img: 'https://picsum.photos/seed/share1/400/300',
-    },
-    {
-      id: 2,
-      title: '新聞標題 B',
-      desc: '這是一段最新消息的摘要，簡單介紹文章內容。',
-      img: 'https://picsum.photos/seed/share2/400/300',
-    },
-    {
-      id: 3,
-      title: '新聞標題 C',
-      desc: '這是一段最新消息的摘要，簡單介紹文章內容。',
-      img: 'https://picsum.photos/seed/share3/400/300',
-    },
-  ];
+export default function NewsSection() {
+  // 每張卡片獨立 loaded 狀態, 控制圖片級 Skeleton
+  const [loadedMap, setLoadedMap] = useState<Record<string, boolean>>({});
+  const [loading, setLoading] = useState(false); // 載入狀態, 控制清單級 Skeleton
+
+  const [items, setItems] = useState<NewsItem[]>([]);
+  const [skip, setSkip] = useState(0); // 分頁：已跳過數
+  const [take] = useState(6); // 分頁：每頁筆數
+  const [total, setTotal] = useState(0); // 分頁：總筆數
+  const [error, setError] = useState<string | null>(null); // 錯誤訊息
+
+  // 抓取 API 的函式（支援初次載入/查看更多）
+  async function load(initial = false) {
+    if (loading) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(
+        `/api/news?take=${take}&skip=${initial ? 0 : skip}`,
+        { cache: 'no-store' }, // [重點] 避免快取舊資料
+      );
+      const data = await res.json();
+      if (initial) {
+        setItems(data.items);
+        setSkip(data.take);
+      } else {
+        setItems((prev) => [...prev, ...data.items]);
+        setSkip((prev) => prev + data.take);
+      }
+      setTotal(data.total);
+    } catch (e: any) {
+      setError(e?.message ?? '載入失敗');
+    } finally {
+      setLoading(false); // 完成後結束清單級 Skeleton
+    }
+  }
+
+  // 元件掛載時抓第一頁
+  useEffect(() => {
+    setLoading(true); // 先讓清單級 Skeleton 出現，避免初次看到「沒有更多了」
+    load(true);
+  }, []);
+
+  const hasMore = skip < total; // 控制「查看更多」是否可點
+  const showLoadMore = items.length > 0 || total > 0; // 只在知道總數或已有資料時顯示按鈕
 
   return (
     <>
@@ -47,67 +75,134 @@ export default function NewsSection() {
       >
         最新消息
       </Typography>
-      <Grid container spacing={4}>
-        {news.map((news) => (
-          <Grid key={news.id} size={{ xs: 12, sm: 6, md: 4 }}>
-            <Card
-              sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}
-            >
-              <CardMedia
-                component="img"
-                image={news.img}
-                alt={news.img}
+
+      {/* 顯示錯誤 */}
+      {error && (
+        <Typography color="error" sx={{ mb: 2 }}>
+          {error}
+        </Typography>
+      )}
+
+      {loading && items.length === 0 ? (
+        // 清單級 Skeleton：第一次載入（items 還沒進來）顯示這一版
+        <Grid container spacing={4}>
+          {Array.from({ length: take }).map((_, i) => (
+            <Grid key={`news-skeleton-${i}`} size={{ xs: 12, sm: 6, md: 4 }}>
+              <Card
                 sx={{
-                  borderRadius: 2,
-                  display: !!loadedMap[news.id] ? 'block' : 'none',
-                  width: '100%',
-                  height: 200,
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
                 }}
-                onLoad={() =>
-                  setLoadedMap((prev) => ({
-                    ...prev,
-                    [news.id]: true,
-                  }))
-                }
-                onError={() =>
-                  setLoadedMap((prev) => ({
-                    ...prev,
-                    [news.id]: true,
-                  }))
-                }
-              />
-              {!loadedMap[news.id] && (
+              >
                 <Skeleton variant="rounded" width="100%" height={200} />
-              )}
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  {news.title}
-                </Typography>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  {new Date().toLocaleDateString()}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {news.desc}
-                </Typography>
-              </CardContent>
-              <Box sx={{ p: 2, mt: 'auto' }}>
-                <Button size="small">閱讀更多</Button>
-              </Box>
-            </Card>
-          </Grid>
-        ))}
-        <Grid
-          size={12}
-          sx={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            mt: 4,
-          }}
-        >
-          <Button variant="contained">查看更多</Button>
+                <CardContent>
+                  <Skeleton
+                    variant="text"
+                    width="70%"
+                    height={28}
+                    sx={{ mb: 1 }}
+                  />
+                  <Skeleton variant="text" width="40%" sx={{ mb: 1 }} />
+                  <Skeleton variant="text" width="90%" />
+                </CardContent>
+                <Box sx={{ p: 2, mt: 'auto' }}>
+                  <Skeleton variant="rounded" width={100} height={36} />
+                </Box>
+              </Card>
+            </Grid>
+          ))}
         </Grid>
-      </Grid>
+      ) : (
+        // 一般卡片（包含「圖片級 Skeleton」：opacity 0→1，不用 display:none）
+        <Grid container spacing={4}>
+          {items.map((news) => {
+            const loaded = !!loadedMap[news.id];
+            return (
+              <Grid key={news.id} size={{ xs: 12, sm: 6, md: 4 }}>
+                <Card
+                  sx={{
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    position: 'relative',
+                  }}
+                >
+                  {/* 圖片級 Skeleton 疊層 */}
+                  {!loaded && (
+                    <Skeleton
+                      variant="rounded"
+                      width="100%"
+                      height={200}
+                      sx={{ position: 'absolute', top: 0, left: 0, right: 0 }}
+                    />
+                  )}
+
+                  <CardMedia
+                    component="img"
+                    image={news.imageUrl || '/No_Image_Placeholder.png'}
+                    alt={news.title}
+                    sx={{
+                      borderRadius: 2,
+                      width: '100%',
+                      height: 200,
+                      opacity: loaded ? 1 : 0, // 用透明度切換，確保會發請求並觸發 onLoad
+                      transition: 'opacity .25s ease',
+                    }}
+                    onLoad={() =>
+                      setLoadedMap((prev) => ({ ...prev, [news.id]: true }))
+                    }
+                    onError={() =>
+                      setLoadedMap((prev) => ({ ...prev, [news.id]: true }))
+                    }
+                  />
+
+                  <CardContent>
+                    <Typography variant="h6" gutterBottom>
+                      {news.title}
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      gutterBottom
+                    >
+                      {/* 使用 API 的 createdAt */}
+                      {new Date(news.createdAt).toLocaleDateString()}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {news.description ?? '—'}
+                    </Typography>
+                  </CardContent>
+                  <Box sx={{ p: 2, mt: 'auto' }}>
+                    <Button size="small">閱讀更多</Button>
+                  </Box>
+                </Card>
+              </Grid>
+            );
+          })}
+
+          {/* 查看更多按鈕（避免初次就顯示「沒有更多了」） */}
+          {showLoadMore && (
+            <Grid
+              size={12}
+              sx={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                mt: 4,
+              }}
+            >
+              <Button
+                variant="contained"
+                disabled={!hasMore || loading}
+                onClick={() => load()}
+              >
+                {loading ? '載入中...' : hasMore ? '查看更多' : '沒有更多了'}
+              </Button>
+            </Grid>
+          )}
+        </Grid>
+      )}
     </>
   );
 }

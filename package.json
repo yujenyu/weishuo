@@ -6,18 +6,24 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:seed": "prisma db seed"
   },
   "dependencies": {
+    "@auth/prisma-adapter": "^2.10.0",
     "@emotion/cache": "^11.14.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@mui/material": "^7.3.1",
     "@mui/material-nextjs": "^7.3.0",
+    "@prisma/client": "^6.16.1",
+    "@supabase/supabase-js": "^2.57.4",
     "next": "15.5.0",
+    "next-auth": "^5.0.0-beta.29",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "react-icons": "^5.5.0"
+    "react-icons": "^5.5.0",
+    "zod": "^4.1.8"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -28,7 +34,11 @@
     "eslint": "^9",
     "eslint-config-next": "15.5.0",
     "prettier": "3.6.2",
+    "prisma": "^6.16.1",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.mjs"
   }
 }
