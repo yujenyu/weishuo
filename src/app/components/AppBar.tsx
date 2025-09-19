@@ -18,11 +18,11 @@ import { FaBars, FaGoogle } from 'react-icons/fa6';
 import ThemeToggleButton from './ThemeToggleButton';
 import { useSession, signIn, signOut } from 'next-auth/react';
 
-// const pages = ['關於我們', '最新資訊', '資源分享', '聯絡我們'];
 const navLinks = [
   { label: '關於我們', href: '/about' },
   { label: '最新資訊', href: '/news' },
   { label: '資源分享', href: '/resources' },
+  { label: '社群留言', href: '/community' },
   { label: '活動紀實', href: '/activities' },
   { label: '聯絡我們', href: '/contact' },
 ];

@@ -10,6 +10,7 @@ import {
   Typography,
   Button,
   Skeleton,
+  CardActions,
 } from '@mui/material';
 
 type NewsItem = {
@@ -19,6 +20,10 @@ type NewsItem = {
   imageUrl?: string;
   createdAt: string;
 };
+
+const RADIUS = 2; // 圖片區塊圓角
+const IMAGE_H = 200; // 圖片區塊高度
+const ACTION_H = 40; // 卡片底部按鈕區高度
 
 export default function NewsSection() {
   // 每張卡片獨立 loaded 狀態, 控制圖片級 Skeleton
@@ -45,6 +50,7 @@ export default function NewsSection() {
       if (initial) {
         setItems(data.items);
         setSkip(data.take);
+        setLoadedMap({}); // 初次載入時清空圖片載入狀態，避免殘留
       } else {
         setItems((prev) => [...prev, ...data.items]);
         setSkip((prev) => prev + data.take);
@@ -84,7 +90,7 @@ export default function NewsSection() {
       )}
 
       {loading && items.length === 0 ? (
-        // 清單級 Skeleton：第一次載入（items 還沒進來）顯示這一版
+        // 清單級 Skeleton
         <Grid container spacing={4}>
           {Array.from({ length: take }).map((_, i) => (
             <Grid key={`news-skeleton-${i}`} size={{ xs: 12, sm: 6, md: 4 }}>
@@ -95,7 +101,27 @@ export default function NewsSection() {
                   flexDirection: 'column',
                 }}
               >
-                <Skeleton variant="rounded" width="100%" height={200} />
+                <Box
+                  sx={{
+                    position: 'relative',
+                    height: IMAGE_H,
+                    borderRadius: RADIUS,
+                    overflow: 'hidden',
+                    bgcolor: 'action.hover',
+                    mb: 2,
+                  }}
+                >
+                  <Skeleton
+                    variant="rounded"
+                    sx={{
+                      position: 'absolute',
+                      inset: 0,
+                      width: '100%',
+                      height: '100%',
+                      borderRadius: 'inherit',
+                    }}
+                  />
+                </Box>
                 <CardContent>
                   <Skeleton
                     variant="text"
@@ -106,8 +132,16 @@ export default function NewsSection() {
                   <Skeleton variant="text" width="40%" sx={{ mb: 1 }} />
                   <Skeleton variant="text" width="90%" />
                 </CardContent>
-                <Box sx={{ p: 2, mt: 'auto' }}>
-                  <Skeleton variant="rounded" width={100} height={36} />
+                <Box
+                  sx={{
+                    p: 2,
+                    mt: 'auto',
+                    minHeight: ACTION_H,
+                    display: 'flex',
+                    justifyContent: 'flex-start',
+                  }}
+                >
+                  <Skeleton variant="rounded" width="20%" />
                 </Box>
               </Card>
             </Grid>
@@ -129,33 +163,54 @@ export default function NewsSection() {
                   }}
                 >
                   {/* 圖片級 Skeleton 疊層 */}
-                  {!loaded && (
-                    <Skeleton
-                      variant="rounded"
-                      width="100%"
-                      height={200}
-                      sx={{ position: 'absolute', top: 0, left: 0, right: 0 }}
-                    />
-                  )}
-
-                  <CardMedia
-                    component="img"
-                    image={news.imageUrl || '/No_Image_Placeholder.png'}
-                    alt={news.title}
+                  <Box
                     sx={{
-                      borderRadius: 2,
-                      width: '100%',
-                      height: 200,
-                      opacity: loaded ? 1 : 0, // 用透明度切換，確保會發請求並觸發 onLoad
-                      transition: 'opacity .25s ease',
+                      position: 'relative',
+                      height: IMAGE_H,
+                      borderRadius: RADIUS,
+                      overflow: 'hidden',
+                      bgcolor: 'action.hover',
+                      mb: 2,
                     }}
-                    onLoad={() =>
-                      setLoadedMap((prev) => ({ ...prev, [news.id]: true }))
-                    }
-                    onError={() =>
-                      setLoadedMap((prev) => ({ ...prev, [news.id]: true }))
-                    }
-                  />
+                  >
+                    {/* 圖片級 Skeleton 疊層 */}
+                    {!loaded && (
+                      <Skeleton
+                        variant="rounded"
+                        sx={{
+                          position: 'absolute',
+                          inset: 0,
+                          width: '100%',
+                          height: '100%',
+                          borderRadius: 'inherit',
+                        }}
+                      />
+                    )}
+
+                    {/* 圖片本體（與 Skeleton 共用同尺寸/位置） */}
+                    <Box
+                      component="img"
+                      src={news.imageUrl || '/No_Image_Placeholder.png'}
+                      alt={news.title}
+                      sx={{
+                        position: 'absolute',
+                        inset: 0,
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        display: 'block',
+                        opacity: loaded ? 1 : 0,
+                        transition: 'opacity .25s ease',
+                        borderRadius: 'inherit',
+                      }}
+                      onLoad={() =>
+                        setLoadedMap((prev) => ({ ...prev, [news.id]: true }))
+                      }
+                      onError={() =>
+                        setLoadedMap((prev) => ({ ...prev, [news.id]: true }))
+                      }
+                    />
+                  </Box>
 
                   <CardContent>
                     <Typography variant="h6" gutterBottom>
@@ -173,7 +228,7 @@ export default function NewsSection() {
                       {news.description ?? '—'}
                     </Typography>
                   </CardContent>
-                  <Box sx={{ p: 2, mt: 'auto' }}>
+                  <Box sx={{ p: 2, mt: 'auto', minHeight: ACTION_H }}>
                     <Button size="small">閱讀更多</Button>
                   </Box>
                 </Card>

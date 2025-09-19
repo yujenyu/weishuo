@@ -14,6 +14,17 @@ export const CreatePostSchema = z.object({
 });
 export type CreatePostInput = z.infer<typeof CreatePostSchema>;
 
+export type PostDetail = {
+  id: string;
+  type: 'NEWS' | 'SHARE' | 'NEED';
+  title: string;
+  description?: string | null;
+  content?: string | null;
+  imageUrl?: string | null;
+  status?: string | null;
+  createdAt: Date;
+};
+
 // 讀列表（分頁）
 export async function listPosts(params: {
   type?: 'NEWS' | 'SHARE' | 'NEED';
@@ -21,7 +32,7 @@ export async function listPosts(params: {
   skip?: number;
 }) {
   const { type, take = 12, skip = 0 } = params;
-  const limit = Math.min(take, 50); // 上限避免一次抓太多
+  const limit = Math.min(take, 50);
   const where = type ? { type } : undefined;
 
   const [items, total] = await Promise.all([
@@ -61,6 +72,22 @@ export async function createPost(data: CreatePostInput, authorId: string) {
       type: true,
       title: true,
       description: true,
+      imageUrl: true,
+      status: true,
+      createdAt: true,
+    },
+  });
+}
+
+export async function getPostById(id: string): Promise<PostDetail | null> {
+  return prisma.post.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      type: true,
+      title: true,
+      description: true,
+      content: true,
       imageUrl: true,
       status: true,
       createdAt: true,

@@ -5,13 +5,13 @@ import {
   Grid,
   Card,
   CardContent,
-  CardMedia,
   Typography,
   Button,
   Tabs,
   Tab,
   Skeleton,
   CardActions,
+  Box,
 } from '@mui/material';
 
 type Item = {
@@ -20,6 +20,10 @@ type Item = {
   description?: string;
   imageUrl?: string;
 };
+
+const RADIUS = 2; // 圖片區塊圓角
+const IMAGE_H = 200; // 圖片區塊高度
+const ACTION_H = 40; // 卡片底部按鈕區高度
 
 export default function ResourcesSection() {
   // 0=SHARE, 1=NEED
@@ -51,6 +55,7 @@ export default function ResourcesSection() {
       if (initial) {
         setItems(data.items);
         setSkip(data.take);
+        setLoadedMap({}); // 初次載入時清空圖片載入狀態，避免殘留
       } else {
         setItems((prev) => [...prev, ...data.items]);
         setSkip((prev) => prev + data.take);
@@ -111,23 +116,49 @@ export default function ResourcesSection() {
           {Array.from({ length: take }).map((_, i) => (
             <Grid key={`skeleton-${i}`} size={{ xs: 12, sm: 6, md: 3 }}>
               <Card sx={{ height: '100%', textAlign: 'center', p: 2 }}>
-                <Skeleton variant="rounded" width="100%" height={200} />
+                <Box
+                  sx={{
+                    position: 'relative',
+                    height: IMAGE_H,
+                    borderRadius: RADIUS,
+                    overflow: 'hidden',
+                    bgcolor: 'action.hover',
+                    mb: 2,
+                  }}
+                >
+                  <Skeleton
+                    variant="rounded"
+                    sx={{
+                      position: 'absolute',
+                      inset: 0,
+                      width: '100%',
+                      height: '100%',
+                      borderRadius: 'inherit',
+                    }}
+                  />
+                </Box>
+
                 <CardContent>
                   <Skeleton
                     variant="text"
                     width="70%"
                     height={28}
-                    sx={{ mx: 'auto', mb: 1 }}
+                    sx={{ mx: 'auto' }}
                   />
                   <Skeleton variant="text" width="90%" />
                   <Skeleton variant="text" width="80%" sx={{ mb: 2 }} />
-                  <Skeleton
-                    variant="rounded"
-                    width={100}
-                    height={36}
-                    sx={{ mx: 'auto' }}
-                  />
                 </CardContent>
+                <CardActions
+                  sx={{
+                    mt: 'auto',
+                    p: 0,
+                    pt: 1,
+                    justifyContent: 'center',
+                    minHeight: ACTION_H,
+                  }}
+                >
+                  <Skeleton variant="rounded" width={100} height={36} />
+                </CardActions>
               </Card>
             </Grid>
           ))}
@@ -144,46 +175,61 @@ export default function ResourcesSection() {
                   sx={{
                     height: '100%',
                     textAlign: 'center',
-                    p: 2,
                     position: 'relative',
                     display: 'flex', // 讓整張卡片成為 flex 容器
                     flexDirection: 'column', // 垂直排列：圖片/內容/按鈕
+                    p: 2,
                   }}
                 >
-                  {/* 圖片級 Skeleton 疊層 */}
-                  {!loaded && (
-                    <Skeleton
-                      variant="rounded"
-                      width="100%"
-                      height={200}
+                  {/* 圖片級 Skeleton + 圖片：放在同一個容器，確保完全對齊 */}
+                  <Box
+                    sx={{
+                      position: 'relative',
+                      height: IMAGE_H,
+                      borderRadius: RADIUS,
+                      overflow: 'hidden',
+                      bgcolor: 'action.hover', // 圖片載入前的底色，避免白底閃爍
+                      mb: 2,
+                    }}
+                  >
+                    {/* 圖片級 Skeleton 疊層 */}
+                    {!loaded && (
+                      <Skeleton
+                        variant="rounded"
+                        sx={{
+                          position: 'absolute',
+                          inset: 0,
+                          width: '100%',
+                          height: '100%',
+                          borderRadius: 'inherit',
+                        }}
+                      />
+                    )}
+
+                    {/* 圖片本體（用 Box component="img" 與 Skeleton 共用同尺寸/位置） */}
+                    <Box
+                      component="img"
+                      src={item.imageUrl || '/No_Image_Placeholder.png'}
+                      alt={item.title}
                       sx={{
                         position: 'absolute',
-                        top: 16,
-                        left: 16,
-                        right: 16,
+                        inset: 0,
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        display: 'block',
+                        opacity: loaded ? 1 : 0, // 用透明度，不用 display:none
+                        transition: 'opacity .25s ease',
+                        borderRadius: 'inherit',
                       }}
+                      onLoad={() =>
+                        setLoadedMap((prev) => ({ ...prev, [key]: true }))
+                      }
+                      onError={() =>
+                        setLoadedMap((prev) => ({ ...prev, [key]: true }))
+                      }
                     />
-                  )}
-
-                  <CardMedia
-                    component="img"
-                    image={item.imageUrl || '/No_Image_Placeholder.png'}
-                    alt={item.title}
-                    sx={{
-                      borderRadius: 2,
-                      width: '100%',
-                      height: 200,
-                      objectFit: 'cover',
-                      opacity: loaded ? 1 : 0, // 用透明度，不用 display:none
-                      transition: 'opacity .25s ease',
-                    }}
-                    onLoad={() =>
-                      setLoadedMap((prev) => ({ ...prev, [key]: true }))
-                    }
-                    onError={() =>
-                      setLoadedMap((prev) => ({ ...prev, [key]: true }))
-                    }
-                  />
+                  </Box>
 
                   <CardContent sx={{ flexGrow: 1 }}>
                     <Typography variant="h6" gutterBottom>
@@ -200,16 +246,23 @@ export default function ResourcesSection() {
                   <CardActions
                     sx={{ mt: 'auto', p: 0, pt: 1, justifyContent: 'center' }}
                   >
-                    <Button
-                      variant="contained"
-                      size="small"
+                    <CardActions
                       sx={{
-                        minWidth: 'auto', // 讓寬度跟內容走
-                        textTransform: 'none',
+                        mt: 'auto',
+                        p: 0,
+                        pt: 1,
+                        justifyContent: 'center',
+                        minHeight: ACTION_H,
                       }}
                     >
-                      {tab === 0 ? '查看資源' : '聯繫需求'}
-                    </Button>
+                      <Button
+                        variant="contained"
+                        size="small"
+                        sx={{ minWidth: 'auto', textTransform: 'none' }}
+                      >
+                        {tab === 0 ? '查看資源' : '聯繫需求'}
+                      </Button>
+                    </CardActions>
                   </CardActions>
                 </Card>
               </Grid>

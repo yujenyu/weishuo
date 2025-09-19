@@ -2,7 +2,7 @@
 import { useColorScheme } from '@mui/material/styles';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
-import { FaRegSun, FaRegMoon } from 'react-icons/fa6';
+import { MdOutlineLightMode, MdOutlineDarkMode } from 'react-icons/md';
 
 export default function ThemeToggleButton() {
   /**
@@ -47,9 +47,9 @@ export default function ThemeToggleButton() {
         sx={{ mr: 1.5 }}
       >
         {resolvedMode === 'dark' ? (
-          <FaRegSun size={18} />
+          <MdOutlineLightMode size={24} />
         ) : (
-          <FaRegMoon size={18} />
+          <MdOutlineDarkMode size={24} />
         )}
       </IconButton>
     </Tooltip>
