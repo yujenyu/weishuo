@@ -12,6 +12,7 @@ import {
   Skeleton,
   CardActions,
   Box,
+  CircularProgress,
 } from '@mui/material';
 
 type Item = {
@@ -31,7 +32,7 @@ export default function ResourcesSection() {
 
   // 每張卡片獨立 loaded 狀態, 控制圖片級 Skeleton
   const [loadedMap, setLoadedMap] = useState<Record<string, boolean>>({});
-  const [loading, setLoading] = useState(false); // 載入狀態, 控制清單級 Skeleton
+  const [loading, setLoading] = useState(true); // 載入狀態, 控制清單級 Skeleton
 
   const [items, setItems] = useState<Item[]>([]); // 以 API 回來的 items 取代 mock
   const [skip, setSkip] = useState(0); // 分頁
@@ -43,7 +44,8 @@ export default function ResourcesSection() {
   const typePath = tab === 0 ? 'shares' : 'needs';
 
   async function load(initial = false) {
-    if (loading) return;
+    // 初次(initial=true) 一定要放行；只有在非初次又正在載入時才擋掉重複請求
+    if (loading && !initial) return;
     setLoading(true);
     setError(null);
     try {
@@ -74,44 +76,49 @@ export default function ResourcesSection() {
     setSkip(0);
     setTotal(0);
     setLoadedMap({});
-    setLoading(true); // 先讓清單級 Skeleton 出現
+    setLoading(true); // 讓清單級 Skeleton 先出來，避免塌陷
     load(true);
   }, [tab]);
 
-  const hasMore = skip < total; // 控制查看更多
-  const showLoadMore = items.length > 0 || total > 0; // 只在知道總數或已有資料時顯示按鈕
+  // 是否還有下一頁：當「目前已取筆數(skip)」小於「總筆數(total)」時，代表還能再載更多
+  const hasMore = skip < total;
 
-  return (
-    <>
-      <Typography
-        variant="h4"
-        gutterBottom
-        sx={{ fontWeight: 'bold', mt: 8, mb: 2, color: 'primary' }}
-      >
-        資源分享
-      </Typography>
+  // 是否要顯示「查看更多」：只要已經有任何資料(items)或已知總筆數(total)就顯示
+  // 避免初次進入、尚未拿到資料與總數時就出現「沒有更多了」
+  const showLoadMore = items.length > 0 || total > 0;
 
-      {/* Tabs 切換 */}
-      <Tabs
-        value={tab}
-        onChange={(_, newValue) => setTab(newValue)}
-        textColor="primary"
-        indicatorColor="primary"
-        sx={{ mb: 3 }}
-      >
-        <Tab label="最新分享" />
-        <Tab label="最新需求" />
-      </Tabs>
-
-      {/* 簡單錯誤顯示 */}
-      {error && (
-        <Typography color="error" sx={{ mb: 2 }}>
-          {error}
+  // Early Return 1：loading 或初次載入尚未拿到資料時，顯示 Skeleton
+  if (loading) {
+    return (
+      <>
+        <Typography
+          variant="h4"
+          gutterBottom
+          sx={{ fontWeight: 'bold', mb: 2, color: 'primary' }}
+        >
+          資源分享
         </Typography>
-      )}
 
-      {loading && items.length === 0 ? (
-        // 清單級 Skeleton
+        {/* Tabs 切換 */}
+        <Tabs
+          value={tab}
+          onChange={(_, newValue) => setTab(newValue)}
+          textColor="primary"
+          indicatorColor="primary"
+          sx={{ mb: 3 }}
+        >
+          <Tab label="最新分享" />
+          <Tab label="最新需求" />
+        </Tabs>
+
+        {/* 簡單錯誤顯示 */}
+        {error && (
+          <Typography color="error" sx={{ mb: 2 }}>
+            {error}
+          </Typography>
+        )}
+
+        {/* 清單級 Skeleton */}
         <Grid container spacing={4}>
           {Array.from({ length: take }).map((_, i) => (
             <Grid key={`skeleton-${i}`} size={{ xs: 12, sm: 6, md: 3 }}>
@@ -163,134 +170,207 @@ export default function ResourcesSection() {
             </Grid>
           ))}
         </Grid>
-      ) : (
-        // 一般卡片 + 圖片級 Skeleton
-        <Grid container spacing={4}>
-          {items.map((item) => {
-            const key = `${tab}-${item.id}`;
-            const loaded = !!loadedMap[key];
-            return (
-              <Grid key={key} size={{ xs: 12, sm: 6, md: 3 }}>
-                <Card
+      </>
+    );
+  }
+
+  // Early Return 2：非 loading 且沒有資料，顯示空狀態
+  if (items.length === 0) {
+    return (
+      <>
+        <Typography
+          variant="h4"
+          gutterBottom
+          sx={{ fontWeight: 'bold', mb: 2, color: 'primary' }}
+        >
+          資源分享
+        </Typography>
+
+        {/* Tabs 切換 */}
+        <Tabs
+          value={tab}
+          onChange={(_, newValue) => setTab(newValue)}
+          textColor="primary"
+          indicatorColor="primary"
+          sx={{ mb: 3 }}
+        >
+          <Tab label="最新分享" />
+          <Tab label="最新需求" />
+        </Tabs>
+
+        {/* 簡單錯誤顯示 */}
+        {error && (
+          <Typography color="error" sx={{ mb: 2 }}>
+            {error}
+          </Typography>
+        )}
+
+        <Box sx={{ py: 8, textAlign: 'center' }}>
+          <Typography color="text.secondary">目前沒有資料</Typography>
+        </Box>
+      </>
+    );
+  }
+
+  // 正常清單：一般卡片 + 圖片級 Skeleton
+  return (
+    <>
+      <Typography
+        variant="h4"
+        gutterBottom
+        sx={{ fontWeight: 'bold', mb: 2, color: 'primary' }}
+      >
+        資源分享
+      </Typography>
+
+      {/* Tabs 切換 */}
+      <Tabs
+        value={tab}
+        onChange={(_, newValue) => setTab(newValue)}
+        textColor="primary"
+        indicatorColor="primary"
+        sx={{ mb: 3 }}
+      >
+        <Tab label="最新分享" />
+        <Tab label="最新需求" />
+      </Tabs>
+
+      {/* 簡單錯誤顯示 */}
+      {error && (
+        <Typography color="error" sx={{ mb: 2 }}>
+          {error}
+        </Typography>
+      )}
+
+      {/* 一般卡片 + 圖片級 Skeleton */}
+      <Grid container spacing={4}>
+        {items.map((item) => {
+          const key = `${tab}-${item.id}`;
+          const loaded = !!loadedMap[key];
+          return (
+            <Grid key={key} size={{ xs: 12, sm: 6, md: 3 }}>
+              <Card
+                sx={{
+                  height: '100%',
+                  textAlign: 'center',
+                  position: 'relative',
+                  display: 'flex', // 讓整張卡片成為 flex 容器
+                  flexDirection: 'column', // 垂直排列：圖片/內容/按鈕
+                  p: 2,
+                }}
+              >
+                {/* 圖片級 Skeleton + 圖片：放在同一個容器，確保完全對齊 */}
+                <Box
                   sx={{
-                    height: '100%',
-                    textAlign: 'center',
                     position: 'relative',
-                    display: 'flex', // 讓整張卡片成為 flex 容器
-                    flexDirection: 'column', // 垂直排列：圖片/內容/按鈕
-                    p: 2,
+                    height: IMAGE_H,
+                    borderRadius: RADIUS,
+                    overflow: 'hidden',
+                    bgcolor: 'action.hover', // 圖片載入前的底色，避免白底閃爍
+                    mb: 2,
                   }}
                 >
-                  {/* 圖片級 Skeleton + 圖片：放在同一個容器，確保完全對齊 */}
-                  <Box
-                    sx={{
-                      position: 'relative',
-                      height: IMAGE_H,
-                      borderRadius: RADIUS,
-                      overflow: 'hidden',
-                      bgcolor: 'action.hover', // 圖片載入前的底色，避免白底閃爍
-                      mb: 2,
-                    }}
-                  >
-                    {/* 圖片級 Skeleton 疊層 */}
-                    {!loaded && (
-                      <Skeleton
-                        variant="rounded"
-                        sx={{
-                          position: 'absolute',
-                          inset: 0,
-                          width: '100%',
-                          height: '100%',
-                          borderRadius: 'inherit',
-                        }}
-                      />
-                    )}
-
-                    {/* 圖片本體（用 Box component="img" 與 Skeleton 共用同尺寸/位置） */}
-                    <Box
-                      component="img"
-                      src={item.imageUrl || '/No_Image_Placeholder.png'}
-                      alt={item.title}
+                  {/* 圖片級 Skeleton 疊層 */}
+                  {!loaded && (
+                    <Skeleton
+                      variant="rounded"
                       sx={{
                         position: 'absolute',
                         inset: 0,
                         width: '100%',
                         height: '100%',
-                        objectFit: 'cover',
-                        display: 'block',
-                        opacity: loaded ? 1 : 0, // 用透明度，不用 display:none
-                        transition: 'opacity .25s ease',
                         borderRadius: 'inherit',
                       }}
-                      onLoad={() =>
-                        setLoadedMap((prev) => ({ ...prev, [key]: true }))
-                      }
-                      onError={() =>
-                        setLoadedMap((prev) => ({ ...prev, [key]: true }))
-                      }
                     />
-                  </Box>
+                  )}
 
-                  <CardContent sx={{ flexGrow: 1 }}>
-                    <Typography variant="h6" gutterBottom>
-                      {item.title}
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{ mb: 2 }}
-                    >
-                      {item.description ?? '—'}
-                    </Typography>
-                  </CardContent>
-                  <CardActions
-                    sx={{ mt: 'auto', p: 0, pt: 1, justifyContent: 'center' }}
+                  {/* 圖片本體（用 Box component="img" 與 Skeleton 共用同尺寸/位置） */}
+                  <Box
+                    component="img"
+                    src={item.imageUrl || '/No_Image_Placeholder.png'}
+                    alt={item.title}
+                    sx={{
+                      position: 'absolute',
+                      inset: 0,
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      display: 'block',
+                      opacity: loaded ? 1 : 0, // 用透明度，不用 display:none
+                      transition: 'opacity .25s ease',
+                      borderRadius: 'inherit',
+                    }}
+                    onLoad={() =>
+                      setLoadedMap((prev) => ({ ...prev, [key]: true }))
+                    }
+                    onError={() =>
+                      setLoadedMap((prev) => ({ ...prev, [key]: true }))
+                    }
+                  />
+                </Box>
+
+                <CardContent sx={{ flexGrow: 1 }}>
+                  <Typography variant="h6" gutterBottom>
+                    {item.title}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ mb: 2 }}
                   >
-                    <CardActions
-                      sx={{
-                        mt: 'auto',
-                        p: 0,
-                        pt: 1,
-                        justifyContent: 'center',
-                        minHeight: ACTION_H,
-                      }}
+                    {item.description ?? '—'}
+                  </Typography>
+                </CardContent>
+                <CardActions
+                  sx={{ mt: 'auto', p: 0, pt: 1, justifyContent: 'center' }}
+                >
+                  <CardActions
+                    sx={{
+                      mt: 'auto',
+                      p: 0,
+                      pt: 1,
+                      justifyContent: 'center',
+                      minHeight: ACTION_H,
+                    }}
+                  >
+                    <Button
+                      variant="contained"
+                      size="small"
+                      sx={{ minWidth: 'auto', textTransform: 'none' }}
                     >
-                      <Button
-                        variant="contained"
-                        size="small"
-                        sx={{ minWidth: 'auto', textTransform: 'none' }}
-                      >
-                        {tab === 0 ? '查看資源' : '聯繫需求'}
-                      </Button>
-                    </CardActions>
+                      {tab === 0 ? '查看資源' : '聯繫需求'}
+                    </Button>
                   </CardActions>
-                </Card>
-              </Grid>
-            );
-          })}
-
-          {/* 查看更多按鈕（避免初次就顯示「沒有更多了」） */}
-          {showLoadMore && (
-            <Grid
-              size={12}
-              sx={{
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                mt: 4,
-              }}
-            >
-              <Button
-                variant="contained"
-                disabled={!hasMore || loading}
-                onClick={() => load()}
-              >
-                {loading ? '載入中...' : hasMore ? '查看更多' : '沒有更多了'}
-              </Button>
+                </CardActions>
+              </Card>
             </Grid>
-          )}
-        </Grid>
-      )}
+          );
+        })}
+
+        {/* 查看更多按鈕（避免初次就顯示「沒有更多了」） */}
+        {showLoadMore && (
+          <Grid
+            size={12}
+            sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              mt: 4,
+            }}
+          >
+            <Button
+              variant="contained"
+              disabled={!hasMore || loading}
+              onClick={() => load()}
+              startIcon={
+                loading ? <CircularProgress size={16} thickness={5} /> : null
+              }
+            >
+              {loading ? '載入中...' : hasMore ? '查看更多' : '沒有更多了'}
+            </Button>
+          </Grid>
+        )}
+      </Grid>
     </>
   );
 }
