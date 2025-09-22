@@ -2,10 +2,10 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 import InitColorSchemeScript from '@mui/material/InitColorSchemeScript';
-import Providers from './providers';
+import Providers from '../providers/providers';
 
-import AppBar from './components/AppBar';
-import Footer from './components/Footer';
+import AppBar from '../components/layout/AppBar';
+import Footer from '../components/layout/Footer';
 
 export const metadata: Metadata = {
   title: 'WEISHUO',

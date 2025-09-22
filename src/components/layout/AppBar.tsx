@@ -15,7 +15,7 @@ import {
   MenuItem,
 } from '@mui/material';
 import { FaBars, FaGoogle } from 'react-icons/fa6';
-import ThemeToggleButton from './ThemeToggleButton';
+import ThemeToggleButton from '../ui/ThemeToggleButton';
 import { useSession, signIn, signOut } from 'next-auth/react';
 
 const navLinks = [

@@ -1,8 +1,8 @@
 'use client';
 
 import { Container, Stack, Box } from '@mui/material';
-import NewsSection from './components/NewsSection';
-import ResourcesSection from './components/ResourcesSection';
+import NewsSection from '../features/news/NewsSection';
+import ResourcesSection from '../features/resources/ResourcesSection';
 
 export default function Home() {
   return (

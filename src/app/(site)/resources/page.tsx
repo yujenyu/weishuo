@@ -1,12 +1,10 @@
-'use client';
-
 import { Container } from '@mui/material';
-import NewsSection from '../components/NewsSection';
+import ResourcesSection from '@/features/resources/ResourcesSection';
 
-export default function NewsPage() {
+export default function Page() {
   return (
     <Container maxWidth="lg" sx={{ mt: 6, mb: 6 }}>
-      <NewsSection />
+      <ResourcesSection />
     </Container>
   );
 }

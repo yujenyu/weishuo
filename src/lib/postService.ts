@@ -1,4 +1,3 @@
-// src/lib/postService.ts
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
