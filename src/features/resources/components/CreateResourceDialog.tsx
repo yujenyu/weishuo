@@ -9,9 +9,7 @@ import {
   TextField,
   Button,
   LinearProgress,
-  Typography,
   FormControl,
-  FormLabel,
   FormHelperText,
   Stack,
 } from '@mui/material';
@@ -91,17 +89,6 @@ export default function CreateResourceDialog({
           error={showErrors && !!fieldErrors.content}
           helperText={showErrors ? fieldErrors.content : ''}
         />
-        {/* <TextField
-          label="圖片 URL"
-          required
-          fullWidth
-          margin="normal"
-          placeholder="https://..."
-          value={form.imageUrl}
-          onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
-          error={showErrors && !!fieldErrors.imageUrl}
-          helperText={showErrors ? fieldErrors.imageUrl : ''}
-        /> */}
         <FormControl
           fullWidth
           margin="normal"

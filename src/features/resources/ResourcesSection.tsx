@@ -125,7 +125,12 @@ export default function ResourcesSection() {
           try {
             rs.setError(null);
             await rs.createItem();
-          } catch {}
+          } catch (e: unknown) {
+            const msg =
+              e instanceof Error && e.message ? e.message : '建立失敗';
+            rs.setError(msg);
+            console.error('createItem failed:', e);
+          }
         }}
         title={createLabel}
         uploading={rs.uploading}

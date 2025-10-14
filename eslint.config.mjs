@@ -3,7 +3,7 @@ import globals from 'globals';
 import react from 'eslint-plugin-react';
 import nextPlugin from '@next/eslint-plugin-next';
 import tseslint from 'typescript-eslint';
-import prettier from 'eslint-plugin-prettier';
+import eslintConfigPrettier from 'eslint-config-prettier';
 
 export default [
   {
@@ -13,6 +13,8 @@ export default [
       'out/**',
       'build/**',
       'next-env.d.ts',
+      'src/generated/**',
+      'prisma/**',
     ],
   },
 
@@ -30,13 +32,17 @@ export default [
     plugins: {
       react,
       '@next/next': nextPlugin,
-      prettier,
+    },
+    settings: {
+      react: {
+        version: 'detect',
+      },
     },
     rules: {
       ...react.configs.recommended.rules,
       ...nextPlugin.configs['core-web-vitals'].rules,
-      ...prettier.configs.recommended.rules,
       'react/react-in-jsx-scope': 'off',
     },
   },
+  eslintConfigPrettier,
 ];

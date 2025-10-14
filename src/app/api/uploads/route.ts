@@ -111,9 +111,9 @@ export async function POST(req: Request) {
 
     // 回傳 path 與 imageUrl
     return NextResponse.json({ path, imageUrl });
-  } catch (e: any) {
+  } catch (e: unknown) {
     return NextResponse.json(
-      { error: e?.message ?? 'Upload failed' },
+      { error: e instanceof Error ? e.message : 'Upload failed' },
       { status: 500 },
     );
   }

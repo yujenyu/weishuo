@@ -32,14 +32,24 @@ const PostSchema = z.object({
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
+    // take：一次拿幾筆資料（limit）。
     const take = Number(searchParams.get('take') ?? '12');
+    // skip：要跳過前面幾筆再開始拿（offset）
     const skip = Number(searchParams.get('skip') ?? '0');
     const data = await listPosts({ type: 'SHARE', take, skip });
     return NextResponse.json(data, {
       headers: { 'Cache-Control': 'no-store' },
     });
-  } catch (err: any) {
-    console.error('[GET /api/shares] error:', err?.message || err);
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      console.error('[GET /api/shares]', {
+        name: err.name,
+        message: err.message,
+        stack: err.stack,
+      });
+    } else {
+      console.error('[GET /api/shares] Unknown error', err);
+    }
     return NextResponse.json({ error: 'Internal Error' }, { status: 500 });
   }
 }
@@ -78,18 +88,23 @@ export async function POST(req: Request) {
 
     const item = await createPost(parsed, authorId);
     return NextResponse.json({ item });
-  } catch (err: any) {
-    if (err?.issues) {
-      // Zod 錯誤
+  } catch (err: unknown) {
+    if (err instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid payload', details: err.issues },
         { status: 400 },
       );
     }
-    if (err?.message === 'INVALID_PAYLOAD') {
-      return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
+
+    if (err instanceof Error) {
+      console.error('[POST /api/shares]', {
+        name: err.name,
+        message: err.message,
+        stack: err.stack,
+      });
+    } else {
+      console.error('[POST /api/shares] Unknown error', err);
     }
-    console.error('[POST /api/shares] error:', err?.message || err);
     return NextResponse.json({ error: 'Internal Error' }, { status: 500 });
   }
 }

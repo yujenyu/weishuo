@@ -10,6 +10,7 @@ import {
   Button,
 } from '@mui/material';
 import { useState } from 'react';
+import Link from 'next/link';
 import { ACTIONS_HEIGHT, CARD_RADIUS, IMAGE_HEIGHT } from '../lib/constants';
 import type { Item } from '../types';
 
@@ -95,7 +96,13 @@ export default function ResourceCard({
           minHeight: ACTIONS_HEIGHT,
         }}
       >
-        <Button variant="contained" size="small" sx={{ textTransform: 'none' }}>
+        <Button
+          component={Link}
+          href={`/resources/${item.id}`}
+          variant="contained"
+          size="small"
+          sx={{ textTransform: 'none' }}
+        >
           {actionLabel}
         </Button>
       </CardActions>

@@ -55,8 +55,8 @@ export default function NewsSection() {
         setSkip((prev) => prev + data.take);
       }
       setTotal(data.total);
-    } catch (e: any) {
-      setError(e?.message ?? '載入失敗');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '載入失敗');
     } finally {
       setLoading(false); // 完成後結束清單級 Skeleton
     }

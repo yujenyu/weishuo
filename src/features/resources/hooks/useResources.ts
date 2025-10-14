@@ -71,14 +71,18 @@ export function useResources() {
         setSkip((prev) => prev + data.take);
       }
       setTotal(data.total);
-    } catch (e: any) {
-      setError(e?.message ?? '載入失敗');
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : '載入失敗';
+      setError(msg);
     } finally {
       setLoading(false); // 完成後結束清單級 Skeleton
     }
   }
 
-  async function postWithAuth<T>(url: string, body: any): Promise<T | null> {
+  async function postWithAuth<T>(
+    url: string,
+    body: unknown,
+  ): Promise<T | null> {
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -92,10 +96,26 @@ export function useResources() {
     }
 
     if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      const details =
-        data?.details?.map?.((d: any) => d?.message).join?.('；') ?? '';
-      throw new Error(details || data?.error || '請求失敗');
+      const raw: unknown = await res.json().catch(() => undefined);
+
+      let message = '請求失敗';
+      if (raw && typeof raw === 'object') {
+        // 這裡用最簡單的斷言來取欄位，不用 any
+        const { error, details } = raw as {
+          error?: string;
+          details?: Array<{ message?: string }>;
+        };
+
+        const fromDetails =
+          details
+            ?.map((d) => d?.message)
+            .filter(Boolean)
+            .join('；') ?? '';
+
+        message = fromDetails || error || message;
+      }
+
+      throw new Error(message);
     }
     return res.json() as Promise<T>;
   }
@@ -115,8 +135,9 @@ export function useResources() {
 
       // 回填 imageUrl（供後端 Zod 驗證與提交使用）
       setForm((prev) => ({ ...prev, imageUrl: json.imageUrl }));
-    } catch (e: any) {
-      setUploadErr(e?.message || '上傳失敗');
+    } catch (e: unknown) {
+      const msg = e instanceof Error && e.message ? e.message : '上傳失敗';
+      setUploadErr(msg);
     } finally {
       setUploading(false);
     }
@@ -156,8 +177,9 @@ export function useResources() {
       setOpen(false);
       // 成功後關閉並重置
       setShowErrors(false);
-    } catch (e: any) {
-      setError(e?.message ?? '建立失敗');
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : '建立失敗';
+      setError(msg);
     } finally {
       setCreating(false);
     }

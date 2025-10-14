@@ -26,7 +26,7 @@ const navLinks = [
   { label: '活動紀實', href: '/activities' },
   { label: '聯絡我們', href: '/contact' },
 ];
-const settings = ['Profile', 'Account', 'Dashboard', 'Logout'];
+// const settings = ['Profile', 'Account', 'Dashboard', 'Logout'];
 
 function ResponsiveAppBar() {
   const [anchorElNav, setAnchorElNav] = useState<null | HTMLElement>(null);

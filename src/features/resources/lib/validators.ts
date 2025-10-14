@@ -1,5 +1,3 @@
-import type { CreateForm } from '../types';
-
 function cleanTextInput(v?: string) {
   // 去頭尾空白；遇到空、'null'、'undefined' → 視為未填（undefined）
   const s = v?.trim();
