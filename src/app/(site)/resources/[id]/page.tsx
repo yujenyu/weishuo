@@ -14,6 +14,9 @@ import {
   ChipProps,
 } from '@mui/material';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 type Author = {
   id: string;
   name: string;
